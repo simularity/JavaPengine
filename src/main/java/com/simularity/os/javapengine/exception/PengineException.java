@@ -24,16 +24,16 @@ THE SOFTWARE.
 package com.simularity.os.javapengine.exception;
 
 /**
- * @author anniepoo
+ * @author Anne Ogborn
  *
  */
 public class PengineException extends Exception {
 
 	/**
-	 * @param string
+	 * @param string  descriptive string
 	 */
 	public PengineException(String string) {
-		// TODO Auto-generated constructor stub
+		super(string);
 	}
 
 	/**

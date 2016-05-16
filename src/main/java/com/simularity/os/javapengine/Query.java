@@ -33,23 +33,25 @@ import javax.json.JsonValue;
 import com.simularity.os.javapengine.exception.PengineNotReadyException;
 
 /**
- * @author anniepoo
+ * @author Anne Ogborn
  *
- * is this a public class, or a 
+ * Representation of a pengine query in progress or dead
+ * 
+ *  To get one, make a pengine, then use the pengine to make a query.
+ *  
  */
-public class Query {
+public class Query implements Iterator<Proof> {
 
 	private boolean hasMore = true;  // there are more answers on the server
 	private Pengine p;
 	private Vector<JsonObject> availProofs = new Vector<JsonObject>();
 	
-	// TODO Query must call the pengine back when it's returned it's last answer so the pengine can let go
-	
 	/**
-	 * @param pengine
-	 * @param ask
-	 * @param queryMaster
-	 * @throws PengineNotReadyException 
+	 * @param pengine the pengine that is making the query
+	 * @param ask the Prolog query as a string
+	 * @param queryMaster if true, set off the process to make the query on the Pengine slave.
+	 * 
+	 * @throws PengineNotReadyException if the pengine's got a query already or is destroyed
 	 */
 	Query(Pengine pengine, String ask, boolean queryMaster) throws PengineNotReadyException {
 		p = pengine;
@@ -57,26 +59,6 @@ public class Query {
 		if(queryMaster) {
 			p.doAsk(this, ask);
 		}
-	}
-	
-	/**
-	 * @param pengine
-	 * @param query
-	 * @param template
-	 */
-	Query(Pengine pengine, String query, String template) {
-		// TODO Auto-generated constructor stub
-	}
-
-	/**
-	 * @param pengine
-	 * @param ask
-	 * @throws PengineNotReadyException 
-	 */
-	Query(Pengine pengine, String ask) throws PengineNotReadyException {
-		p = pengine;
-		
-		p.doAsk(this, ask);
 	}
 
 	/**
@@ -88,10 +70,11 @@ public class Query {
 	 * It is guaranteed that if you get a null from this the query is done and will
 	 * never return a non-null in the future.
 	 * 
+	 * Note that we don't throw the PengineNotReadyException. This is to conform to the Iterator interface
+	 * 
 	 * @return  the next proof, or null if not available
-	 * @throws PengineNotReadyException 
 	 */
-	public Proof next() throws PengineNotReadyException {
+	synchronized public Proof next() {
 		// the was data available
 		if(!availProofs.isEmpty()) {
 			JsonObject data = availProofs.get(0);
@@ -108,7 +91,12 @@ public class Query {
 		}
 		
 		// try to get more from the server
-		p.doNext(this);
+		try {
+			p.doNext(this);
+		} catch (PengineNotReadyException e) {
+			e.printStackTrace();
+			return null;  // we do this to conform to the Iterator interface
+		}
 		
 		// if we now have data, we have to do just like above
 		if(!availProofs.isEmpty()) {
@@ -124,12 +112,12 @@ public class Query {
 		}
 	}
 	
-	// TODO make version with template
-
 	/**
 	 * signal the query that there are no more Proofs of the query available.
+	 * message sent from the http world
+	 * 
 	 */
-	void noMore() {
+	synchronized void noMore() {
 		if(!hasMore)  // must never call iAmFinished more than once
 			return;
 		
@@ -141,23 +129,24 @@ public class Query {
 	}
 
 	/**
+	 * Callback from the http world that we've got new data from the slave
+	 * 
 	 * @param newDataPoints
 	 */
-	void addNewData(JsonArray newDataPoints) {
+	synchronized void addNewData(JsonArray newDataPoints) {
 		for(Iterator<JsonValue> iter = newDataPoints.listIterator(); iter.hasNext() ; availProofs.add( ((JsonObject)iter.next())));
 	}
-
-	// TODO make this a real iterator
 	
 	/**
-	 * @return
+	 * 
+	 * @return true if we <b>think</b> we have more data. 
 	 */
 	public boolean hasNext() {
 		return hasMore || !availProofs.isEmpty();
 	}
 
 	/**
-	 * 
+	 * dump some debug information
 	 */
 	public void dumpDebugState() {
 		if(this.hasMore)
@@ -170,6 +159,11 @@ public class Query {
 	}
 
 	/**
+	 * Stop the query on the slave. We're done.
+	 * We might make a query that we only need the first few lines of, for example.
+	 * 
+	 * Equivalent of typing period at the top-level in Prolog
+	 * 
 	 * @throws PengineNotReadyException 
 	 * 
 	 */

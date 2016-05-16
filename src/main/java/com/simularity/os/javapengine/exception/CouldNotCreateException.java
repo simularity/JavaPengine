@@ -32,9 +32,6 @@ THE SOFTWARE.
  * clone throws CloneNotSupportedException.
  * 
  * @author Anne Ogborn
- *
- * TODO implement the java sourceinfo and the serverNotReachable flag
- * no, even better, make some subclasses of this and throw them
  * 
  */
 public class CouldNotCreateException extends PengineException {

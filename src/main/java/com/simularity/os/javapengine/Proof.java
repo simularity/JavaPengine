@@ -30,20 +30,28 @@ import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 
 /**
- * @author anniepoo
+ * A single 'proof' - a result from Prolog
+ * 
+ * A Query returns zero or more of these
+ * 
+ * @author Anne Ogborn
  *
  */
 public class Proof {
 	JsonObject json;
 	
 	/**
+	 * Constructor based on the returned JSON data element
+	 * 
 	 * @param jsonValue
 	 */
 	Proof(JsonObject jsonValue) {
 		json = jsonValue;
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Expands the proof to it's JSON object as a string
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -51,14 +59,32 @@ public class Proof {
 		return json.toString();
 	}
 	
+	/**
+	 * given a key, which is a string representing the Prolog variable, return a JsonValue representing what
+	 * it is bound to
+	 * 
+	 * @param key the Prolog variable, a string with an uppercase first letter
+	 * @return the JsonValue
+	 */
 	public JsonValue getValue(String key) {
 		return json.get(key);
 	}
 	
+	/**
+	 * Return the set of values as a JSON object
+	 * 
+	 * @return the JSON object
+	 */
 	public JsonObject getValues() {
 		return json;
 	}
 	
+	/**
+	 * Convenience method to getValue that coerces the JSON value to a string.
+	 * Usually you'd only use this if you're expecting a string
+	 * @param key the Prolog variable, a string with an uppercase first letter
+	 * 
+	 */
 	public String getString(String key) {
 		switch (json.get(key).getValueType()) {
 		case STRING:
@@ -68,20 +94,47 @@ public class Proof {
 		}
 	}
 	
+	/**
+	 * Convenience method to getValue that coerces the JSON value to an int.
+	 * Usually you'd only use this if you're expecting an integer return from Prolog
+	 * 
+	 * Falls back to trying to parse the string if it can't match to an exact integer
+	 * 
+	 * @param key the Prolog variable, a string with an uppercase first letter
+	 * 
+	 */
 	public int getInt(String key) {
 		if (json.get(key).getValueType() == ValueType.NUMBER)
 			return ((JsonNumber)json.get(key)).intValueExact();
 		else
 			return Integer.parseInt(getString(key));
 	}
-	
+
+	/**
+	 * Convenience method to getValue that coerces the JSON value to an int.
+	 * Usually you'd only use this if you're expecting an integer return from Prolog
+	 * 
+	 * Falls back to trying to parse the string only if it can't get the result as an integer
+	 * tries harder to be an integer than getInt
+	 * 
+	 * @param key the Prolog variable, a string with an uppercase first letter
+	 * 
+	 */
 	public int getNearestInt(String key) {
 		if (json.get(key).getValueType() == ValueType.NUMBER)
 			return ((JsonNumber)json.get(key)).intValue();
 		else
 			return Integer.parseInt(getString(key));
 	}
-	
+
+
+	/**
+	 * Convenience method to getValue that coerces the JSON value to a double.
+	 * Usually you'd only use this if you're expecting a float return from Prolog
+	 * 
+	 * @param key the Prolog variable, a string with an uppercase first letter
+	 * 
+	 */
 	public double getDouble(String key) {
 		if (json.get(key).getValueType() == ValueType.NUMBER)
 			return ((JsonNumber)json.get(key)).doubleValue();
@@ -89,12 +142,3 @@ public class Proof {
 			return Double.parseDouble(getString(key));
 	}
 }
-/*
-{"X":{"args":["taco"],"functor":"a"}}
-{"X":"b"}
-{"X":"c"}
-
-querying true gives an empty objectg
-
-{}
-*/

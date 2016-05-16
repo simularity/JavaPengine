@@ -30,24 +30,23 @@ import com.simularity.os.javapengine.PengineBuilder;
 import com.simularity.os.javapengine.exception.CouldNotCreateException;
 
 /**
- * @author anniepoo
+ * @author Anne Ogborn
  *
+ * demo making a Pengine.  This is largely obsolete, @see ManualAsk.java
  */
 public final class Basic {
 
 	/**
-	 * 
+	 *  only exists to call main
 	 */
-	public Basic() {
+	private Basic() {
 	
 	}
-// TODO lots more testing of PengineOptions and create
-	
+
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		PengineBuilder po = new PengineBuilder();
 		
 		try {

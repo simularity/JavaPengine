@@ -24,7 +24,7 @@ THE SOFTWARE.
 package com.simularity.os.javapengine.exception;
 
 /**
- * @author anniepoo
+ * @author Anne Ogborn
  *
  * thrown when something has made the pengine unavailable, eg. network failure or 
  * the server becoming unavailable.
@@ -42,7 +42,6 @@ public class PengineNotAvailableException extends PengineNotReadyException {
 	 */
 	public PengineNotAvailableException(String string) {
 		super(string);
-		// TODO Auto-generated constructor stub
 	}
 
 }

@@ -76,7 +76,11 @@ But the pengines protocol allows the client to send the first query with the cre
 
 The getQuery and getProof methods use these optimizations internally. Their use when appropriate can reduce network traffic.
 
-API
+### Slave Limit
+
+Pengine servers have a per-client slave limit. Clients must destroy pengines before making new ones to stay under the limit.
+
+## API
 ---
 
 Making a Pengine starts with `com.simularity.os.javapengine.PengineBuilder`. 
@@ -113,7 +117,67 @@ After you have stopped or exhausted the solutions, you can start another query. 
 
 When you are done with the Pengine, call destroy() on it. This will happen automatically if you left setDestroy set to true.
 
+## Don't Know Prolog
 
+If you don't know Prolog, you can do most basic queries with this introduction.
+
+### Atoms and Variables
+
+Prolog is case sensitive. Variables start with an uppercase letter, so ThisIsAVariable. All other identifiers are atoms, which either start
+with a lowercase letter, and consist of letters, numbers, and underscore: this_is_an_atom, or are enclosed in single quotes: '!Wow, also an atom!'.  +'taxes'+ and +taxes+ are the same atom - the single quotes are optional here.
+
+### Queries
+
+Most pengines queries are simply a call to a single predicate (sort of like a function in Prolog). 
+
+---
+    employee_info('Bob Smith', Position, Salary)
+---
+
+The results will *bind* Position and Salary to whatever's appropriate for Bob.  This means we can ask strange questions like
+who has a salary of 85000.
+
+---
+    employee_info(Name, Position, 85000)
+---
+
+It's up to the implementer on the Prolog side which of of these 'modes' are actually implemented. You'll need to check with the documentation of the Prolog code. A commonly used convention in the Prolog community is to write a + meaning the argument must be supplied, a - to mean the predicate will fill it in, and ? to mean either is acceptable.  So, we can probably ask for any combination of arguments for employee_info. This would be documented as employee_info(?, ?, ?).
+
+
+### Underscore
+
+We really didn't ask for the position, we just wanted the name. So we can put an underscore in the second argument to say we're not interested in it.
+
+---
+    employee_info(Name, _, 85000)
+---
+
+
+### Strings
+
+Notice that Bob's name is an atom.  Prolog also has "real strings", and "codes strings". All get converted to Java Strings.
+
+### Nondeterminism
+
+Now, if we happen to have two Bob Smiths in the company?  We'll get two rows of data. If there is no Bob Smith, we'll get no data. So Queries always return an iterator.
+
+One tricky bit about this.  Prolog returns all the ways it can 'prove' the employee info is true. This sometimes means it will return multiple copies of a single answer. If you need rows to be distinct, work with the Prolog programmer.
+
+### Limiting answers
+
+I said above that most queries are a single predicate. An exception to that is that you might want to limit your query to a range. Here's how to do it.
+
+---
+    (employee_info(Name, _, Salary), Salary > 85000, Salary =< 120000)
+---
+
+The commas mean 'and' in this context. You can use another predicate as well. Say you have +department(Name, Department)+ and want to find salaries of employees in marketing.
+
+---
+    (employee_info(Name, _, Salary), department(Name, marketing))
+---
+
+Notice, as an aside, that marketing is an atom. 
 
 
 

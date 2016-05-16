@@ -24,18 +24,16 @@ THE SOFTWARE.
 package com.simularity.os.javapengine.exception;
 
 /**
- * @author anniepoo
+ * @author Anne Ogborn
  *
  * the user has attempted to perform some operation on the pengine when it wasn't ready to 
- * perform that operation
+ * perform that operation..
+ * 
+ * Pengines are stateful. They process a single query at a time.
  * 
  */
 public class PengineNotReadyException extends PengineException {
 
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1838967274556465606L;
 
 	/**

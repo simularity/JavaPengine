@@ -33,25 +33,17 @@ import com.simularity.os.javapengine.exception.CouldNotCreateException;
 import com.simularity.os.javapengine.exception.PengineNotReadyException;
 
 /**
- * Test of JavaPengines functionality
- * 
- * To use, run client.pl
- * cd src/main/prolog
- * swipl client.pl
- * 
- * A pengines server is now running on 9900
- * 
- * java -jar JavaPengines.jar ManualAsk
+ * tests of pengines that use autodestroy and ask on create
  * 
  * @author Anne Ogborn
  *
  */
-public abstract class ManualAsk {
+public class AskOnCreate {
 
 	/**
 	 * 
 	 */
-	private ManualAsk() {
+	private AskOnCreate() {
 		// class only exists to call main on
 	}
 
@@ -62,27 +54,35 @@ public abstract class ManualAsk {
 		
 		PengineBuilder po = new PengineBuilder();
 		try {
+			/*  destroy=true ask=true */
 			po.setServer("http://localhost:9900/");
+			po.setAsk("member(X, [a,b,c])");
+			po.setDestroy(true);
+			
 			Pengine p = po.newPengine();
 			p.dumpStateDebug();
-			for(Query q = p.ask("member(X, [a(taco),2,c])"); q.hasNext() ; ) {
+			for(Query q = p.getCurrentQuery(); q.hasNext() ; ) {
 				Proof proof = q.next();
 				
 				System.out.println(proof.toString());
 			}
+			System.out.println("should be destroyed");
 			p.dumpStateDebug();
 			
-			System.err.println("now make one that sticks around");
+			/* destroy=false ask=true */
+			System.out.println("now make one that sticks around");
 			po.setDestroy(false);
+			po.setAsk("member(X, [lolly, bolly, rolly])");
+			
 			Pengine p2 = po.newPengine();
 			p2.dumpStateDebug();
-			for(Query q = p2.ask("member(X, [a(taco),2,c])"); q.hasNext() ; ) {
+			for(Query q = p2.getCurrentQuery(); q.hasNext() ; ) {
 				Proof proof = q.next();
 				
 				System.out.println(proof.toString());
 			}
 			
-			System.out.println("that felt good, lets do another one");
+			System.out.println("that felt good, lets do another query with the same pengine");
 			
 			for(Query q = p2.ask("(between(1,5, X), Y is 2 * X)"); q.hasNext() ; ) {
 				Proof proof = q.next();
@@ -117,6 +117,7 @@ public abstract class ManualAsk {
 			po.setSrctext("speak(X,Y) :- pengine_output(X), between(1,3,Y).");
 			po.setAlias("ioengine");
 			po.setDestroy(false);
+			po.removeAsk();
 			
 			Pengine io = po.newPengine();
 			
@@ -148,6 +149,4 @@ public abstract class ManualAsk {
 			e.printStackTrace();
 		}
 	}
-
-
 }

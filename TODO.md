@@ -1,13 +1,8 @@
 TODO list
 ---------
 
- * desk check all code
- * remove cruft and clean up comments
- * finish the README
  * abort - a more 'violent' stop - not only do I want you to quit after this answer, I want you to quit sending output (ie ctrl-c in interactor)
- * handle multithreading
  * write the tests below
- * ask option in create
  * Move to Simularity's new organization on github. waiting on Ray to create and add me to the organization.
  * Deploy to Maven Central. Waiting until we move to Simularity's github organization.
  

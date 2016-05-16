@@ -37,6 +37,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  * 
  */
+
+/**
+ * A builder for Pengine
+ * 
+ * 
+ * Pengine Life cycle:
+ * 
+ * <ol>
+ * <li>instantiate a PengineBuilder</li>
+ * <li>set various properties on it</li>
+ * <li>call create on it to make Pengines, respecting the slave limit</li>
+ * <li>Use and destroy the pengines</li>
+ * </ol>
+ * 
+ * If you have destroy set to true in PengineBuilder, the Pengine will be destroyed automatically at the end of the query.
+ * 
+ * @author Anne Ogborn
+ *
+ */
 public final class PengineBuilder implements Cloneable {
 	private URL server = null;
 	private String application = "sandbox";
@@ -50,7 +69,7 @@ public final class PengineBuilder implements Cloneable {
 	
 	
 	/**
-	 * 
+	 * Create a new PengineBuilder
 	 */
 	public PengineBuilder() {
 		super();
@@ -60,8 +79,7 @@ public final class PengineBuilder implements Cloneable {
 	 * @see java.lang.Object#clone()
 	 */
 	@Override
-	public final PengineBuilder clone() throws CloneNotSupportedException {
-		// TODO Auto-generated method stub
+	public final synchronized PengineBuilder clone() throws CloneNotSupportedException {
 		return (PengineBuilder)super.clone();
 	}
 
@@ -74,7 +92,7 @@ public final class PengineBuilder implements Cloneable {
 	 * 
 	 * @throws PengineNotReadyException 
 	 */
-	URL getActualURL(String action) throws PengineNotReadyException {
+	synchronized URL getActualURL(String action) throws PengineNotReadyException {
 		StringBuffer msg = new StringBuffer("none");
 		
 		if(server == null) {
@@ -107,7 +125,7 @@ public final class PengineBuilder implements Cloneable {
 	 * 
 	 * @throws PengineNotReadyException 
 	 */
-	URL getActualURL(String action, String id) throws PengineNotReadyException  {
+	synchronized URL getActualURL(String action, String id) throws PengineNotReadyException  {
 		StringBuffer msg = new StringBuffer("none");
 		
 		if(server == null) {
@@ -142,7 +160,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @return a string representation of the request body for the create action
 	 */
-	String getRequestBodyCreate() {
+	synchronized String getRequestBodyCreate() {
 		JsonBuilderFactory factory = Json.createBuilderFactory(null);
 		JsonObjectBuilder job = factory.createObjectBuilder();
 		
@@ -161,13 +179,10 @@ public final class PengineBuilder implements Cloneable {
 			job.add("srcurl", this.srcurl.toString());
 		}
 		
-		// test protocol
-	//	job.add("ask", "member((X,Y), [(a(taco),3),(b,4),(c,5)])");
-		// job.add("template", "X");
+		if(this.ask != null) {
+			job.add("ask", this.ask);
+		}
 		
-		// this will be a json object with fields for options
-		// sample, as a prolog dict
-		//_{ src_text:"\n            q(X) :- p(X).\n            p(a). p(b). p(c).\n        "}
 		return job.build().toString();
 	}
 
@@ -175,14 +190,16 @@ public final class PengineBuilder implements Cloneable {
 	 * @param urlstring String that represents the server URL - this does not contain the /pengines/create extension
 	 * @throws MalformedURLException if the string can't be turned into an URL
 	 */
-	public void setServer(String urlstring) throws MalformedURLException {
+	synchronized public void setServer(String urlstring) throws MalformedURLException {
 		server = new URL(urlstring);
 	}
 
 	/**
+	 * Set the server URL. Usually this is just the domain, eg. http://pengines.swi-prolog.org/
+	 * 
 	 * @param server the server base URL - this does not contain the /pengines/create extension
 	 */
-	public void setServer(URL server) {
+	synchronized public void setServer(URL server) {
 		this.server = server;
 	}
 	
@@ -195,6 +212,8 @@ public final class PengineBuilder implements Cloneable {
 
 
 	/**
+	 * A pengine server can have different applications with different exposed API's
+	 * 
 	 * @return the application name
 	 */
 	public String getApplication() {
@@ -204,7 +223,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param application the application to set
 	 */
-	public void setApplication(String application) {
+	synchronized public void setApplication(String application) {
 		this.application = application;
 	}
 
@@ -218,7 +237,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param ask the query to be sent along with the create, or null to not send one
 	 */
-	public void setAsk(String ask) {
+	synchronized public void setAsk(String ask) {
 		this.ask = ask;
 	}
 
@@ -232,7 +251,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param chunk the max number of answers to return in one HTTP request - defaults to 1
 	 */
-	public void setChunk(int chunk) {
+	synchronized public void setChunk(int chunk) {
 		this.chunk = chunk;
 	}
 
@@ -246,7 +265,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param destroy Destroy the pengine when the first query concludes?
 	 */
-	public void setDestroy(boolean destroy) {
+	synchronized public void setDestroy(boolean destroy) {
 		this.destroy = destroy;
 	}
 
@@ -260,7 +279,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param srctext Additional Prolog code, which must be safe, to be included in the pengine's knowledgebase
 	 */
-	public void setSrctext(String srctext) {
+	synchronized public void setSrctext(String srctext) {
 		this.srctext = srctext;
 	}
 
@@ -274,7 +293,7 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param srcurl the srcurl to set
 	 */
-	public void setSrcurl(URL srcurl) {
+	synchronized public void setSrcurl(URL srcurl) {
 		this.srcurl = srcurl;
 	}
 
@@ -288,14 +307,11 @@ public final class PengineBuilder implements Cloneable {
 	/**
 	 * @param alias a string name to refer to the pengine by (remove by passing this null)
 	 */
-	public void setAlias(String alias) {
+	synchronized public void setAlias(String alias) {
 		this.alias = alias;
 	}
-	
-	// todo synchronize all this, so we can't change during the pengine create time
-	
-	/* ======================================   Implement PengineFactory =========================== */
-	public Pengine newPengine() throws CouldNotCreateException {
+
+	synchronized public Pengine newPengine() throws CouldNotCreateException {
 		return new Pengine(this);
 	}
 
@@ -314,34 +330,24 @@ public final class PengineBuilder implements Cloneable {
 		sb.append(ask);
 		sb.append(",[]).");     // TODO template, chunk go here
 		return sb.toString();
-		
-		//request_uri('/pengine/send?id=d401db37-61b3-4d5b-9c17-9588d274ef7e'),
-		// http_pengine_send requires id, event, and format l
-		// format is prolog   (that's the default)
-		// EventString is optional, probably from body
-		// calls read_event
-		//%   Read the sent event. The event is a   Prolog  term that is either in
-		// the =event= parameter or as a posted document.
-        // the body of the request looks like
-		// ask(q(A),[template(A)])
 	}
 
 	/**
-	 * @return
+	 * @return the POST body for next operation
 	 */
 	public String getRequestBodyNext() {
 		return "next.";
 	}
 
 	/**
-	 * @return
+	 * @return the POST body for destroy operation
 	 */
 	public String getRequestBodyDestroy() {
 		return "destroy.";
 	}
 
 	/**
-	 * 
+	 * dump some debug information
 	 */
 	public void dumpDebugState() {
 		System.err.println("--- PengineBuilder ----");
@@ -361,40 +367,32 @@ public final class PengineBuilder implements Cloneable {
 	}
 
 	/**
-	 * @return
+	 * @return the POST body for stop operation
 	 */
 	public String getRequestBodyStop() {
 		return "stop.";
 	}
 
 	/**
-	 * @return
+	 * @return the POST body for pull_response
 	 */
 	public String getRequestBodyPullResponse() {
 		return "pull_response.";
 	}
 
-	
-	/* eventually we have this
-	public Query newPengineOnce(String ask) {
-		return newPengineOnce(this.po, ask);
+	/**
+	 * return true if we have an ask
+	 * 
+	 * @return true if we have an ask
+	 */
+	boolean hasAsk() {
+		return this.ask != null;
 	}
 	
-	public Query newPengineOnce(PengineOptions po, String ask) {
-				
+	/**
+	 * remove any ask we have
+	 */
+	public void removeAsk() {
+		this.ask = null;
 	}
-	
-	public Proof newPengineOnceDet(PengineOptions po) {
-	
-	}	
-	// consider removing ask from PengineOptions, force it to be passed in to PengineBuilder to get an initial ask.
-	// it's cleaner conceptually
-	// also consider passing destroy explicitly as an optional parameter
-	public Proof newPengineOnceDet(PengineOptions po, String ask) {
-	
-	}
-	
-	
-	*/
-	
 }

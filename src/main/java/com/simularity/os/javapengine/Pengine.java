@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
+
 /*
  * Copyright (c) 2015 Simularity, Inc.
 
@@ -71,7 +72,7 @@ import com.simularity.os.javapengine.exception.SyntaxErrorException;
  * 
  * To make one use {@link PengineBuilder}
  * 
- * Lifecycle:
+ * Life cycle:
  * 
  * Create using {@link PengineBuilder}
  * Use for one or more Queries
@@ -242,7 +243,7 @@ public final class Pengine {
 				throw new CouldNotCreateException("create request event was" + evtstr + " must be create or destroy");
 			}
 			
-			if(po.getAsk() != null) {
+			if(po.hasAsk()) {
 				this.currentQuery = new Query(this, po.getAsk(), false);
 				state.setState(PSt.ASK);
 			}
@@ -265,9 +266,9 @@ public final class Pengine {
 	}
 
 	/**
-	 * @return the slave_limit
+	 * @return the maximum number of pengines allowed by server
 	 */
-	public int getSlave_limit() {
+	public int getSlaveLimit() {
 		return slave_limit;
 	}
 
@@ -344,30 +345,14 @@ public final class Pengine {
 		this.state.dumpDebugState();
 		
 	}
-/*
-	
-	 * @param query
-	 * @param template
-	 * @return
-	 * @throws PengineNotReadyException 
-	
-	public Query ask(String query, String template) throws PengineNotReadyException {
-		state.must_be_in(PSt.IDLE);
-		
-		if(this.currentQuery != null)
-			throw new PengineNotReadyException("Have not extracted all answers from previous query (or stopped it)");
-		
-		this.currentQuery = new Query(this, query, template);
-		
-		return this.currentQuery;
-	}
-*/
-
 
 	/**
-	 * @param query
-	 * @return
-	 * @throws PengineNotReadyException 
+	 * @param query   the Prolog query to be made. Variables in the Prolog query will be reported in the results with the value they are bound to
+	 * 
+	 * @return  a new Query object
+	 * 
+	 * @throws PengineNotReadyException if the pengine cannot construct the query (eg if it's been destroyed or the previous query is still active)
+	 * 
 	 */
 	public Query ask(String query) throws PengineNotReadyException {
 		state.must_be_in(PSt.IDLE);
@@ -375,15 +360,20 @@ public final class Pengine {
 		if(this.currentQuery != null)
 			throw new PengineNotReadyException("Have not extracted all answers from previous query (or stopped it)");
 		
-		this.currentQuery = new Query(this, query);
+		this.currentQuery = new Query(this, query, true);
 		
 		return this.currentQuery;
 	}
 	
 	/**
-	 * @param ask 
-	 * @param query 
-	 * @throws CouldNotCreateException 
+	 *  Actually do the pengine protocol to perform an ask
+	 *  Package access, external users @see Pengine::ask
+	 *  
+	 * @param ask  The Prolog query
+	 * 
+	 * @param query The Query object
+	 * 
+	 * @throws CouldNotCreateException if we have a query in process, the pengine's destroyed, etc
 	 * 
 	 */
 	void doAsk(Query query, String ask) throws PengineNotReadyException {
@@ -408,14 +398,13 @@ public final class Pengine {
 			state.destroy();
 			throw new PengineNotAvailableException(e.getMessage());
 		}
-		
 	}
 
 	/**
 	 *  the query will not use the pengine again
 	 *  
 	 *  
-	 * @param query
+	 * @param query The Query that has finished
 	 */
 	void iAmFinished(Query query) {
 		if(query.equals(this.currentQuery))
@@ -432,8 +421,12 @@ public final class Pengine {
 	}
 
 	/**
-	 * @param query
-	 * @throws PengineNotReadyException 
+	 * Perform the next protocol
+	 * 
+	 * @param query The Query in process
+	 * 
+	 * @throws PengineNotReadyException if the pengine's dead or processing a different query
+	 * 
 	 */
 	void doNext(Query query) throws PengineNotReadyException {
 		state.must_be_in(PSt.ASK);
@@ -458,7 +451,9 @@ public final class Pengine {
 	}
 
 	/**
-	 * @return
+	 * 
+	 * @return the Pengine ID. Rarely needed.
+	 * 
 	 */
 	public String getID() {
 		state.must_be_in(PSt.ASK, PSt.IDLE);
@@ -469,7 +464,7 @@ public final class Pengine {
 	 * Destroy the pengine.
 	 * this makes a best attempt to destroy the pengine.
 	 * 
-	 * after calling destroy you should not further release the pengine
+	 * after calling destroy you should not further use the pengine
 	 */
 	public void destroy() {
 		if(state.isIn(PSt.DESTROYED))
@@ -504,6 +499,7 @@ public final class Pengine {
 		}
 	}
 	
+	/*  Per Jan Burses's 
 	protected void finalize() {
 		destroy();
 	}

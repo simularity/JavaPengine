@@ -24,19 +24,18 @@ THE SOFTWARE.
 package com.simularity.os.javapengine.exception;
 
 /**
- * @author anniepoo
+ * 
+ * A syntactically invalid piece of JSON or a piece of invalid Prolog
+ * 
+ * @author Anne Ogborn
  *
  */
 public class SyntaxErrorException extends Exception {
 
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6618776336072476401L;
 
 	/**
-	 * @param message
+	 * @param message descriptive message
 	 */
 	public SyntaxErrorException(String message) {
 		super(message);

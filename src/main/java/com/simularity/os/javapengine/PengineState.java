@@ -27,10 +27,13 @@ import java.util.ArrayList;
 
 import com.simularity.os.javapengine.exception.PengineNotReadyException;
 /**
- * @author anniepoo
+ * 
+ * Internal class that represents the current state of the pengine
+ * 
+ * @author Anne Ogborn
  *
  */
-public class PengineState {
+class PengineState {
 	public static enum PSt {
 		NOT_CREATED,   // state 0 in Torbjorns diagram
 		IDLE,  			// state 2 in Torbjorns diagram
@@ -108,7 +111,9 @@ public class PengineState {
 	}
 
 	/**
-	 * @param destroyed
+	 * @param aState 
+	 * 
+	 * @return true if we're in that state
 	 */
 	public boolean isIn(PSt aState) {
 		return this.state.equals(aState);
@@ -116,7 +121,7 @@ public class PengineState {
 	}
 
 	/**
-	 * throw an IllegalStateException if we're not in
+	 * throw an IllegalStateException if we're not in this state
 	 * 
 	 * @param aState 
 	 * @throws PengineNotReadyException 
@@ -128,8 +133,12 @@ public class PengineState {
 	}
 
 	/**
-	 * @param aState
+	 * throw an IllegalStateException if we're not in one of these two states
+	 * 
+	 * @param aState 
 	 * @param anotherState
+	 * 
+	 * @throws PengineNotReadyException 
 	 */
 	public void must_be_in(PSt aState, PSt anotherState) {
 		if(!isIn(aState) && !isIn(anotherState))
@@ -140,21 +149,21 @@ public class PengineState {
 	/**
 	 * pengines can always be destroyed via this method
 	 * 
+	 * this bypasses the normal state transition matrix
 	 */
 	void destroy() {
 		this.state = PSt.DESTROYED; 
-		
 	}
 
 	/**
-	 * 
+	 * dump the state
 	 */
 	public void dumpDebugState() {
 		System.err.println("state " + this.state.toString());
 		
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -162,7 +171,7 @@ public class PengineState {
 		return this.state.hashCode();
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -180,13 +189,11 @@ public class PengineState {
 		return false;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		return state.toString();
 	}
-	
-	
 }
