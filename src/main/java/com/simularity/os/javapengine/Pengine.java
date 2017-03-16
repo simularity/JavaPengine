@@ -369,9 +369,9 @@ public final class Pengine {
 	 *  Actually do the pengine protocol to perform an ask
 	 *  Package access, external users @see Pengine::ask
 	 *  
-	 * @param ask  The Prolog query
-	 * 
 	 * @param query The Query object
+	 * 
+	 * @param ask  The Prolog query
 	 * 
 	 * @throws CouldNotCreateException if we have a query in process, the pengine's destroyed, etc
 	 * 
