@@ -55,7 +55,7 @@ public class AskOnCreate {
 		PengineBuilder po = new PengineBuilder();
 		try {
 			/*  destroy=true ask=true */
-			po.setServer("http://localhost:9900/");
+			po.setServer("http://localhost:3030/");
 			po.setAsk("member(X, [a,b,c])");
 			po.setDestroy(true);
 			

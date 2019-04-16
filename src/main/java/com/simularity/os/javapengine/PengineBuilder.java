@@ -58,7 +58,7 @@ THE SOFTWARE.
  */
 public final class PengineBuilder implements Cloneable {
 	private URL server = null;
-	private String application = "sandbox";
+	private String application = "pengine_sandbox";
 	private String ask = null;
 	private int chunk = 1;
 	private boolean destroy = true;
@@ -173,10 +173,10 @@ public final class PengineBuilder implements Cloneable {
 		job.add("format", this.format);
 
 		if(this.srctext != null) {
-			job.add("srctext", this.srctext);
+			job.add("src_text", this.srctext);
 		}
 		if(this.srcurl != null) {
-			job.add("srcurl", this.srcurl.toString());
+			job.add("src_url", this.srcurl.toString());
 		}
 		
 		if(this.ask != null) {
@@ -322,13 +322,22 @@ public final class PengineBuilder implements Cloneable {
 	 * @param ask   The Prolog query
 	 * @return   the body
 	 */
-	public String getRequestBodyAsk(String id, String ask) {
+	public String getRequestBodyAsk(String id, String ask, int chunk) {
 		
 		StringBuilder sb = new StringBuilder();
 		
-		sb.append("ask(");
+		sb.append("ask((");
 		sb.append(ask);
-		sb.append(",[]).");     // TODO template, chunk go here
+		sb.append("),");
+
+        if (chunk > 1) {
+            sb.append("[chunk(")
+              .append(chunk)
+              .append(")]");
+        } else {
+            sb.append("[]");
+        }
+        sb.append(").");
 		return sb.toString();
 	}
 

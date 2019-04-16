@@ -62,7 +62,8 @@ public abstract class ManualAsk {
 		
 		PengineBuilder po = new PengineBuilder();
 		try {
-			po.setServer("http://localhost:9900/");
+			po.setServer("http://localhost:3030/");
+            po.setChunk(5);
 			Pengine p = po.newPengine();
 			p.dumpStateDebug();
 			for(Query q = p.ask("member(X, [a(taco),2,c])"); q.hasNext() ; ) {
@@ -118,13 +119,14 @@ public abstract class ManualAsk {
 			po.setAlias("ioengine");
 			po.setDestroy(false);
 			
+            po.setChunk(1);
 			Pengine io = po.newPengine();
 			
-			for(Query q = io.ask("(pengine_output('cabbages and kings'), between(1,3,X))"); q.hasNext() ; ) {
+			for(Query q = io.ask("(pengine_output('cabbages and kings'), speak(1,Y), between(1,3,X))"); q.hasNext() ; ) {
 				Proof proof = q.next();
 				System.out.println(proof.toString());
 				
-				if (proof.getNearestInt("X") < 3) {  // change this to a larger number to see it hang
+				if (proof.getNearestInt("X") < 5) {  // change this to a larger number to see it hang
 					// this hangs on the last proof
 					// This is referred to in https://github.com/SWI-Prolog/pengines/issues/19
 					String out = io.getOutput();

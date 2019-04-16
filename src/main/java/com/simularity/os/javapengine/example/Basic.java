@@ -50,7 +50,7 @@ public final class Basic {
 		PengineBuilder po = new PengineBuilder();
 		
 		try {
-			po.setServer("http://localhost:9900/");
+			po.setServer("http://localhost:3030/");
 			Pengine p = po.newPengine();
 			p.dumpStateDebug();
 		} catch (MalformedURLException e) {
