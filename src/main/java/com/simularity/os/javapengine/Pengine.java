@@ -160,53 +160,56 @@ public final class Pengine {
 			) throws IOException {
 		StringBuffer response;
 
-		try {
-			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			// above should get us an HttpsURLConnection if it's https://...
+        int maxRetries = 5;
+        while (maxRetries > 0) {
+            try {
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                // above should get us an HttpsURLConnection if it's https://...
 
-			//add request header
-			con.setRequestMethod("POST");
-			con.setRequestProperty("User-Agent", "JavaPengine");
-			con.setRequestProperty("Accept", "application/json");
-			con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-			con.setRequestProperty("Content-type", contentType);
+                //add request header
+                con.setRequestMethod("POST");
+                con.setRequestProperty("User-Agent", "JavaPengine");
+                con.setRequestProperty("Accept", "application/json");
+                con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
+                con.setRequestProperty("Content-type", contentType);
 
-			// Send post request
-			con.setDoOutput(true);
-			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-			try {
-				wr.writeBytes(body);
-				wr.flush();
-			} finally {
-				wr.close();
-			}
+                // Send post request
+                con.setDoOutput(true);
+                try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
+                    wr.writeBytes(body);
+                    wr.flush();
+                }
 
-			int responseCode = con.getResponseCode();
-			if(responseCode < 200 || responseCode > 299) {
-				throw new IOException("bad response code (if 500, query was invalid? query threw Prolog exception?) " + Integer.toString(responseCode) + " " + url.toString() + " " + body);
-			}
+                int responseCode = con.getResponseCode();
+                if(responseCode < 200 || responseCode > 299) {
+                    throw new IOException("bad response code (if 500, query was invalid? query threw Prolog exception?) " + Integer.toString(responseCode) + " " + url.toString() + " " + body);
+                }
 
-			BufferedReader in = new BufferedReader(
-					new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			response = new StringBuffer();
-			try {
-				while ((inputLine = in.readLine()) != null) {
-					response.append(inputLine);
-				}
-			} finally {
-				in.close();
-			}
-			
-			JsonReaderFactory jrf = Json.createReaderFactory(null);
-			JsonReader jr = jrf.createReader(new StringReader(response.toString()));
-			JsonObject respObject = jr.readObject();
-			
-			return respObject;
-		} catch (IOException e) {
-			state.destroy();
-			throw e;
-		}
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(con.getInputStream()));
+                String inputLine;
+                response = new StringBuffer();
+                try {
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                } finally {
+                    in.close();
+                }
+                
+                JsonReaderFactory jrf = Json.createReaderFactory(null);
+                JsonReader jr = jrf.createReader(new StringReader(response.toString()));
+                JsonObject respObject = jr.readObject();
+                
+                return respObject;
+            } catch (IOException e) {
+                if (--maxRetries < 0) {
+                    state.destroy();
+                    throw e;
+                }
+            }
+        }
+        return null;
 	}
 	
 
@@ -283,6 +286,7 @@ public final class Pengine {
 			if(answer.containsKey("event")) {
 				switch( ((JsonString)answer.get("event")).getString()) {
 				case	"success":
+                    currentQuery.succeeded();
 					if(answer.containsKey("data")) {
 						currentQuery.addNewData(answer.getJsonArray("data"));
 					}
@@ -296,6 +300,7 @@ public final class Pengine {
 				case	"destroy":
 					if(answer.containsKey("data")) {
 						// if it contains a data key, then strangely, it's an 'answer' structure
+                        currentQuery.succeeded();
 						handleAnswer(answer.getJsonObject("data"));
 					}
 					if(currentQuery != null)
@@ -315,7 +320,8 @@ public final class Pengine {
 					throw new SyntaxErrorException("Error - probably invalid Prolog query?");
 					
 				case	"output":
-					String data = answer.getString("data");
+                    // Use to String in case pengine_output is sending a non-string.
+					String data = answer.get("data").toString();
 					availOutput.add(data);
 					break;
 					
@@ -388,7 +394,7 @@ public final class Pengine {
 			JsonObject answer =  penginePost(
 					po.getActualURL("send", this.getID()),
 					"application/x-prolog; charset=UTF-8",
-					po.getRequestBodyAsk(this.getID(), ask));
+					po.getRequestBodyAsk(this.getID(), ask, po.getChunk()));
 			
 			handleAnswer(answer);
 		} catch (IOException e) {
@@ -571,15 +577,7 @@ public final class Pengine {
 			return out;
 		}
 		
-		if(state.isIn(PSt.ASK) || state.isIn(PSt.IDLE))
-			doPullResponse();
-		
-		if(!this.availOutput.isEmpty()) {
-			String out = this.availOutput.firstElement();
-			this.availOutput.remove(0);
-			return out;
-		}
-		
 		return null;
 	}
 }
+

@@ -43,6 +43,7 @@ import com.simularity.os.javapengine.exception.PengineNotReadyException;
 public class Query implements Iterator<Proof> {
 
 	private boolean hasMore = true;  // there are more answers on the server
+    private boolean succeeded = false; // A solution has yet to be delivered!
 	private Pengine p;
 	private Vector<JsonObject> availProofs = new Vector<JsonObject>();
 	
@@ -75,6 +76,16 @@ public class Query implements Iterator<Proof> {
 	 * @return  the next proof, or null if not available
 	 */
 	synchronized public Proof next() {
+        // we may have consumed non-data messages before now.
+        while (!succeeded) {
+            try {
+                // Either we get the result, or consume more output events
+                p.doPullResponse();
+            } catch (PengineNotReadyException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
 		// the was data available
 		if(!availProofs.isEmpty()) {
 			JsonObject data = availProofs.get(0);
@@ -90,13 +101,15 @@ public class Query implements Iterator<Proof> {
 			return null;
 		}
 		
+        succeeded=false;
+
 		// try to get more from the server
 		try {
 			p.doNext(this);
 		} catch (PengineNotReadyException e) {
-			e.printStackTrace();
-			return null;  // we do this to conform to the Iterator interface
-		}
+            e.printStackTrace();
+            return null;  // we do this to conform to the Iterator interface
+        }
 		
 		// if we now have data, we have to do just like above
 		if(!availProofs.isEmpty()) {
@@ -168,11 +181,16 @@ public class Query implements Iterator<Proof> {
 	 * 
 	 */
 	public void stop() throws PengineNotReadyException {
-		p.doStop();
+        if (hasMore)
+            p.doStop();
 		
 		hasMore = false;
 		availProofs.clear();
 		
 		p.iAmFinished(this);
 	}
+
+    public void succeeded() {
+        succeeded = true;
+    }
 }
